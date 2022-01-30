@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, get_list_or_404, render
 from .models import Receitas
 
 def index(request):
@@ -12,5 +12,9 @@ def index(request):
     return render(request, 'index.html', dados)
 
 
-def receita(requst):
-    return render(requst, 'receita.html')
+def receita(request, receita_id):
+    receita = get_object_or_404(Receitas, pk=receita_id)
+    receita_a_exibir = {
+        'receita': receita
+    }
+    return render(request, 'receita.html', receita_a_exibir)

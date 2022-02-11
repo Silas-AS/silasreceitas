@@ -1,4 +1,6 @@
+from crypt import methods
 from email import message
+from urllib import request
 from django.shortcuts import redirect, render, get_object_or_404
 from django.contrib.auth.models import User
 from django.contrib import auth, messages
@@ -74,9 +76,9 @@ def cria_receita(request):
     if request.method == 'POST':
         nome_receita = request.POST['nome_receita']
         ingredientes = request.POST['ingredientes']
-        modo_preparo = request.POST['modo_preparo']
-        tempo_preparo = request.POST['tempo_preparo']
-        rendimento = request.POST['rendimento']
+        modo_de_preparo = request.POST['modo_preparo']
+        tempo_de_preparo = request.POST['tempo_preparo']
+        rendimentos = request.POST['rendimento']
         categoria = request.POST['categoria']
         foto_receita = request.FILES['foto_receita']
         if campo_vazio(nome_receita):
@@ -85,25 +87,53 @@ def cria_receita(request):
         if campo_vazio(ingredientes):
             messages.error(request, 'O campo nome não pode ficar em branco')
             return redirect('cria_receita')
-        if campo_vazio(modo_preparo):
+        if campo_vazio(modo_de_preparo):
             messages.error(request, 'O campo nome não pode ficar em branco')
             return redirect('cria_receita')
-        if campo_vazio(tempo_preparo):
+        if campo_vazio(tempo_de_preparo):
             messages.error(request, 'O campo nome não pode ficar em branco')
             return redirect('cria_receita')
-        if campo_vazio(rendimento):
+        if campo_vazio(rendimentos):
             messages.error(request, 'O campo nome não pode ficar em branco')
             return redirect('cria_receita')
         if campo_vazio(categoria):
             messages.error(request, 'O campo nome não pode ficar em branco')
             return redirect('cria_receita')
         user = get_object_or_404(User, pk=request.user.id)
-        receita = Receitas.objects.create(pessoa=user,nome_receita=nome_receita, ingredientes=ingredientes, modo_de_preparo=modo_preparo,tempo_de_preparo=tempo_preparo, rendimentos=rendimento,categoria=categoria, foto_receita=foto_receita)
+        receita = Receitas.objects.create(pessoa=user,nome_receita=nome_receita, ingredientes=ingredientes, modo_de_preparo=modo_de_preparo,tempo_de_preparo=tempo_de_preparo, rendimentos=rendimentos,categoria=categoria, foto_receita=foto_receita)
         receita.save()
         messages.success(request, 'Receita cadastrada com sucesso!')
         return redirect('dashboard')
     else:
         return render(request, 'usuarios/cria_receita.html')
+
+
+def edita_receita(request, receita_id):
+    receita = get_object_or_404(Receitas, pk=receita_id)
+    receita_a_editar = {'receita': receita}
+    return render(request, 'usuarios/edita_receita.html', receita_a_editar)
+
+
+def atualiza_receita(request):
+    if request.method == 'POST':
+        receita_id = request.POST['receita_id']
+        receita = Receitas.objects.get(pk=receita_id)
+        receita.nome_receita = request.POST['nome_receita']
+        receita.ingredientes = request.POST['ingredientes']
+        receita.modo_de_preparo = request.POST['modo_de_preparo']
+        receita.tempo_de_preparo = request.POST['tempo_de_preparo']
+        receita.redimentos = request.POST['rendimentos']
+        receita.categoria = request.POST['categoria']
+        if 'foto_receita' in request.FILES:
+            receita.foto_receita = request.FILES['foto_receita']
+        receita.save()
+        return redirect('dashboard')
+
+
+def deleta_receita(request, receita_id):
+    receita = get_object_or_404(Receitas, pk=receita_id)
+    receita.delete()
+    return redirect('dashboard')
 
 
 def campo_vazio(campo):

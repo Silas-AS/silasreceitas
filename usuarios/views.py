@@ -1,6 +1,7 @@
+from email import message
 from django.shortcuts import redirect, render, get_object_or_404
 from django.contrib.auth.models import User
-from django.contrib import auth
+from django.contrib import auth, messages
 from receitas.models import Receitas
 # Create your views here.
 def cadastro(request):
@@ -9,20 +10,23 @@ def cadastro(request):
         email = request.POST['email']
         senha = request.POST['password']
         senha2 = request.POST['password2']
-        if not nome.strip():
-            print('O campo nome não pode ficar em branco')
+        if campo_vazio(nome):
+            messages.error(request, 'O campo nome não pode ficar em branco')
             return redirect('cadastro')
-        if not email.strip():
-            print('O campo email não pode ficar em branco')
+        if campo_vazio(email):
+            messages.error(request, 'O campo email não pode ficar em branco')
             return redirect('cadastro')
-        if senha != senha2:
+        if senhas_nao_sao_iguais(senha, senha2):
+            messages.error(request, 'As Senhas não são iguais')
             print('As senhas não são iguais')
             return redirect('cadastro')
         if User.objects.filter(email=email).exists():
             print('Usuário já cadastrado')
+            messages.error(request, 'Usuário já cadastrado')
             return redirect('cadastro')
         user = User.objects.create_user(username=nome, email=email, password=senha)
         user.save()
+        messages.success(request, 'Usuário cadastrado com sucesso')
         print('Usuário cadastrado com sucesso')
         return redirect('login')
     else:
@@ -33,19 +37,19 @@ def login(request):
     if request.method == 'POST':
         email = request.POST['email']
         senha = request.POST['senha']
-        if email == "" or senha == "":
-            print('Os campos email e senha não podem ficar em branco')
+        if campo_vazio(email) or campo_vazio(senha):
+            messages.error(request, 'Os campos email e senha não podem ficar em branco')
             return redirect('login')
-        print(email, senha)
         if User.objects.filter(email=email).exists():
             nome = User.objects.filter(email=email).values_list('username', flat=True).get()
-            user = auth.authenticate(request, username=nome, password=senha)
+            user = auth.authenticate(request, username=nome, password=senha)           
             if user is not None:
                 auth.login(request, user)
-                print('Login realizado com sucesso')
-        return redirect('dashboard')
+                messages.success(request, 'Login realizado com sucesso')
+                return redirect('dashboard')
+        messages.error(request, 'Email ou Senha Invalidos.')
     return render(request, 'usuarios/login.html')
-
+        
 
 def dashboard(request):
     if request.user.is_authenticated:
@@ -66,6 +70,7 @@ def logout(request):
 
 
 def cria_receita(request):
+
     if request.method == 'POST':
         nome_receita = request.POST['nome_receita']
         ingredientes = request.POST['ingredientes']
@@ -74,9 +79,37 @@ def cria_receita(request):
         rendimento = request.POST['rendimento']
         categoria = request.POST['categoria']
         foto_receita = request.FILES['foto_receita']
+        if campo_vazio(nome_receita):
+            messages.error(request, 'O campo nome não pode ficar em branco')
+            return redirect('cria_receita')
+        if campo_vazio(ingredientes):
+            messages.error(request, 'O campo nome não pode ficar em branco')
+            return redirect('cria_receita')
+        if campo_vazio(modo_preparo):
+            messages.error(request, 'O campo nome não pode ficar em branco')
+            return redirect('cria_receita')
+        if campo_vazio(tempo_preparo):
+            messages.error(request, 'O campo nome não pode ficar em branco')
+            return redirect('cria_receita')
+        if campo_vazio(rendimento):
+            messages.error(request, 'O campo nome não pode ficar em branco')
+            return redirect('cria_receita')
+        if campo_vazio(categoria):
+            messages.error(request, 'O campo nome não pode ficar em branco')
+            return redirect('cria_receita')
         user = get_object_or_404(User, pk=request.user.id)
         receita = Receitas.objects.create(pessoa=user,nome_receita=nome_receita, ingredientes=ingredientes, modo_de_preparo=modo_preparo,tempo_de_preparo=tempo_preparo, rendimentos=rendimento,categoria=categoria, foto_receita=foto_receita)
         receita.save()
+        messages.success(request, 'Receita cadastrada com sucesso!')
         return redirect('dashboard')
     else:
         return render(request, 'usuarios/cria_receita.html')
+
+
+def campo_vazio(campo):
+    return not campo.strip()
+
+
+def senhas_nao_sao_iguais(senha, senha2):
+    if senha != senha2:
+        return
